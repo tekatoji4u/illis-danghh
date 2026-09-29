@@ -4,6 +4,7 @@ import { VietinBankLogo } from './components/VietinBankLogo.tsx';
 import { QRScannerModal } from './components/QRScannerModal.tsx';
 import { PdfViewerModal } from './components/PdfViewerModal.tsx';
 import { ManualLookupForm } from './components/ManualLookupForm.tsx';
+import { DiagnosticsModal } from './components/DiagnosticsModal.tsx';
 import { UserProfile, LookupResponse, LookupHistoryItem } from './types.ts';
 import jsQR from 'jsqr';
 import {
@@ -25,13 +26,15 @@ import {
   ShieldCheck,
   Building,
   RotateCcw,
-  BookOpen
+  BookOpen,
+  Activity
 } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false);
   const [searchCode, setSearchCode] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResult, setSearchResult] = useState<LookupResponse | null>(null);
@@ -187,6 +190,7 @@ export default function App() {
         user={user}
         onRefreshSession={handleRefreshSession}
         isRefreshing={isRefreshing}
+        onOpenDiagnostics={() => setIsDiagnosticsOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -202,11 +206,24 @@ export default function App() {
 
           <div className="relative max-w-5xl mx-auto space-y-6 text-center">
             {/* Title Badges */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-white shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-[#7ED3F7]" />
-              <span>Hệ thống nghiệp vụ tín dụng VietinBank</span>
-              <span className="w-1 h-1 rounded-full bg-white/50" />
-              <span className="text-[#7ED3F7]">Tự động đăng nhập iLIS VNPT</span>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-white shadow-sm">
+                <Sparkles className="w-3.5 h-3.5 text-[#7ED3F7]" />
+                <span>Hệ thống nghiệp vụ tín dụng VietinBank</span>
+                <span className="w-1 h-1 rounded-full bg-white/50" />
+                <span className="text-[#7ED3F7]">Tự động đăng nhập iLIS VNPT</span>
+              </div>
+
+              {/* Diagnostic Button */}
+              <button
+                type="button"
+                onClick={() => setIsDiagnosticsOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 hover:text-white border border-emerald-400/40 text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                title="Bấm để kiểm tra chi tiết phản hồi API và quyền truy xuất iLIS"
+              >
+                <Activity className="w-3.5 h-3.5 text-emerald-300" />
+                <span>Kiểm tra quyền truy xuất iLIS</span>
+              </button>
             </div>
 
             <div className="space-y-2">
@@ -636,6 +653,12 @@ export default function App() {
           timestamp={searchResult.timestamp}
         />
       )}
+
+      {/* Diagnostics Modal for verifying iLIS permissions */}
+      <DiagnosticsModal
+        isOpen={isDiagnosticsOpen}
+        onClose={() => setIsDiagnosticsOpen(false)}
+      />
 
       {/* Footer - Strictly contains 'Design by Hải Đăng' as requested */}
       <footer className="bg-white border-t border-slate-200 mt-auto">

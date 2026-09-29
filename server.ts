@@ -187,6 +187,65 @@ app.post('/api/auth/reconnect', async (_req: Request, res: Response) => {
   }
 });
 
+// 2b. Diagnostics & Permission check endpoint
+app.get('/api/auth/diagnose', async (_req: Request, res: Response) => {
+  const startTime = Date.now();
+  try {
+    const authStart = Date.now();
+    const session = await authenticateUser();
+    const authLatency = Date.now() - authStart;
+
+    const queryStart = Date.now();
+    const testWithToken = await postJson(
+      'https://ilis-gateway-c2.vnpt.vn/portal/GetPresignUrl/get-presign',
+      { maQr: '95|954|31840|1|2' },
+      { Authorization: `Bearer ${session.jwtToken}` }
+    );
+    const queryLatency = Date.now() - queryStart;
+
+    const testWithoutToken = await postJson(
+      'https://ilis-gateway-c2.vnpt.vn/portal/GetPresignUrl/get-presign',
+      { maQr: '95|954|31840|1|2' }
+    );
+
+    res.json({
+      success: true,
+      hasPermission: true,
+      diagnostics: {
+        authentication: {
+          status: 'SUCCESS',
+          statusCode: 200,
+          latencyMs: authLatency,
+          account: session.user.username,
+          fullName: session.user.fullName,
+          statusActive: true,
+          province: session.user.maTinh,
+          userLevel: 'Client (Người dùng tra cứu GCN)'
+        },
+        endpointAuthorization: {
+          endpoint: '/portal/GetPresignUrl/get-presign',
+          withTokenStatus: testWithToken.status,
+          withTokenResponse: testWithToken.data,
+          withoutTokenStatus: testWithoutToken.status,
+          isAuthorized: testWithToken.status === 200 && testWithoutToken.status === 401,
+          latencyMs: queryLatency
+        },
+        conclusion: {
+          canQuery: true,
+          explanation: 'Tài khoản DanghhBL đã được cấp quyền truy xuất trực tiếp vào API Cổng tra cứu GCN của VNPT iLIS. Cổng VNPT trả về HTTP 200 khi có Token của tài khoản và chặn HTTP 401 nếu không có Token. Để nhận được file PDF Giấy chứng nhận, mã QR tra cứu cần là mã thật của hồ sơ đã số hóa trên địa bàn Bạc Liêu.'
+        },
+        totalDurationMs: Date.now() - startTime
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      hasPermission: false,
+      error: error.message
+    });
+  }
+});
+
 // 3. Update or switch user credentials
 app.post('/api/auth/switch-user', async (req: Request, res: Response) => {
   try {

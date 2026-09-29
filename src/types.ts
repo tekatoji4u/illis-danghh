@@ -37,3 +37,35 @@ export interface LookupHistoryItem {
   pdfUrl?: string;
   note?: string;
 }
+
+export interface DiagnosticResult {
+  success: boolean;
+  hasPermission: boolean;
+  diagnostics: {
+    authentication: {
+      status: string;
+      statusCode: number;
+      latencyMs: number;
+      account: string;
+      fullName: string;
+      statusActive: boolean;
+      province: string;
+      userLevel: string;
+    };
+    endpointAuthorization: {
+      endpoint: string;
+      withTokenStatus: number;
+      withTokenResponse: any;
+      withoutTokenStatus: number;
+      isAuthorized: boolean;
+      latencyMs: number;
+    };
+    conclusion: {
+      canQuery: boolean;
+      explanation: string;
+    };
+    totalDurationMs: number;
+  };
+  error?: string;
+}
+

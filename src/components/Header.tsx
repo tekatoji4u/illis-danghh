@@ -18,12 +18,14 @@ interface HeaderProps {
   user: UserProfile | null;
   onRefreshSession: () => Promise<void>;
   isRefreshing: boolean;
+  onOpenDiagnostics: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   user,
   onRefreshSession,
-  isRefreshing
+  isRefreshing,
+  onOpenDiagnostics
 }) => {
   const [showUserInfoModal, setShowUserInfoModal] = useState(false);
 
@@ -48,14 +50,18 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Right: Authenticated User Status & Direct Access Badge */}
             <div className="flex items-center gap-3">
-              {/* Direct Bypass Badge */}
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold shadow-xs">
+              {/* Direct Bypass Badge & Diagnostics button */}
+              <button
+                onClick={onOpenDiagnostics}
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-300 text-emerald-800 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                title="Bấm để kiểm tra chi tiết quyền truy xuất cổng VNPT iLIS"
+              >
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600" />
                 </span>
-                <span>Bỏ qua đăng nhập • Kết nối trực tiếp</span>
-              </div>
+                <span>Bỏ qua đăng nhập • Kiểm tra quyền</span>
+              </button>
 
               {/* User Pill Button */}
               {user ? (
