@@ -5,6 +5,7 @@ import { QRScannerModal } from './components/QRScannerModal.tsx';
 import { PdfViewerModal } from './components/PdfViewerModal.tsx';
 import { ManualLookupForm } from './components/ManualLookupForm.tsx';
 import { DiagnosticsModal } from './components/DiagnosticsModal.tsx';
+import { ilisService } from './services/ilisService.ts';
 import { UserProfile, LookupResponse, LookupHistoryItem } from './types.ts';
 import jsQR from 'jsqr';
 import {
@@ -69,11 +70,8 @@ export default function App() {
   const fetchSession = async () => {
     try {
       setIsInitializing(true);
-      const res = await fetch('/api/auth/session');
-      const data = await res.json();
-      if (data.success && data.user) {
-        setUser(data.user);
-      }
+      const userProfile = await ilisService.getCurrentUser();
+      setUser(userProfile);
     } catch (err) {
       console.error('Session fetch error:', err);
     } finally {
@@ -84,11 +82,8 @@ export default function App() {
   const handleRefreshSession = async () => {
     try {
       setIsRefreshing(true);
-      const res = await fetch('/api/auth/reconnect', { method: 'POST' });
-      const data = await res.json();
-      if (data.success && data.user) {
-        setUser(data.user);
-      }
+      const userProfile = await ilisService.authenticate();
+      setUser(userProfile);
     } catch (err) {
       console.error('Reconnect error:', err);
     } finally {
@@ -107,13 +102,7 @@ export default function App() {
     setSearchResult(null);
 
     try {
-      const res = await fetch('/api/tracuu/gcn', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ maQr: targetCode })
-      });
-
-      const data: LookupResponse = await res.json();
+      const data = await ilisService.lookupGCN(targetCode);
       setSearchResult(data);
 
       // Append to history
@@ -137,7 +126,7 @@ export default function App() {
       setSearchResult({
         success: false,
         status: false,
-        message: 'Lỗi mạng hoặc sự cố kết nối tới máy chủ iLIS VNPT',
+        message: err.message || 'Lỗi mạng hoặc sự cố kết nối tới máy chủ iLIS VNPT',
         maQr: targetCode
       });
     } finally {

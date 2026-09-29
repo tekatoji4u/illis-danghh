@@ -13,6 +13,7 @@ import {
   Info
 } from 'lucide-react';
 import { DiagnosticResult } from '../types.ts';
+import { ilisService } from '../services/ilisService.ts';
 
 interface DiagnosticsModalProps {
   isOpen: boolean;
@@ -31,11 +32,27 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/auth/diagnose');
-      const json: DiagnosticResult = await res.json();
-      setData(json);
+      // Run diagnostic directly against VNPT iLIS Gateway
+      const result = await ilisService.runDiagnostics();
+      setData(result);
     } catch (err: any) {
-      setError(err.message || 'Không thể kết nối đến máy chủ chẩn đoán');
+      console.error('Diagnostics error:', err);
+      // Try server fallback if available
+      try {
+        const fallbackRes = await fetch('/api/auth/diagnose');
+        if (fallbackRes.ok && fallbackRes.headers.get('content-type')?.includes('application/json')) {
+          const fallbackData = await fallbackRes.json();
+          setData(fallbackData);
+          return;
+        }
+      } catch {
+        // ignore fallback failure
+      }
+      setError(
+        err.message?.includes('The string did not match the expected pattern')
+          ? 'Không thể kết nối đến máy chủ iLIS VNPT (Lỗi cấu trúc phản hồi). Vui lòng thử lại.'
+          : (err.message || 'Không thể kết nối đến Cổng VNPT iLIS. Vui lòng kiểm tra kết nối mạng.')
+      );
     } finally {
       setLoading(false);
     }
